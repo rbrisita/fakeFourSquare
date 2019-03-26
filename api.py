@@ -1,27 +1,23 @@
-"""
-API responsible for CRUD operations on database and supplying json response.
-"""
-
-__author__ = 'rb'
-
-
 import datetime
-from flask import jsonify
 
-
-class API(object):
+class Api:
+    """
+    Api responsible for CRUD operations on database and supplying json response.
+    """
     __db = None
 
     def __init__(self, db):
         self.__db = db
 
     def save_review(self, dictForm):
-        review = {'date': datetime.datetime.utcnow(),
-                  'name': dictForm['name'],
-                  'location': dictForm['location'],
-                  'rate': dictForm['rate'],
-                  'review': dictForm['review'],
-                  'tags': dictForm['tags']}
+        review = {
+            'date': datetime.datetime.utcnow(),
+            'name': dictForm['name'],
+            'location': dictForm['location'],
+            'rate': dictForm['rate'],
+            'review': dictForm['review'],
+            'tags': dictForm['tags']
+        }
 
         # review = {date, review}
         # db.reviews.update({_id:{name:'mytest', location:[1,2]}}, {rate:1}, {upsert:1})
@@ -29,9 +25,6 @@ class API(object):
         # self.__db.reviews.update({_id:{name, location}}, {$set:{review:review}}, upsert=True)
 
         self.__db.reviews.insert(review)
-
-    def request_reviews_json(self, name):
-        return jsonify(self.request_reviews(name))
 
     def request_reviews(self, name):
         cursor = self.__db.reviews.find({'name': name}).sort('date', direction=-1)
@@ -54,21 +47,32 @@ class API(object):
         tags.sort()
         rating = round(float(rating) / float(cursor.count()), 2)
 
-        return {'name': name,
-                'location': location,
-                'rating': rating,
-                'reviews': reviews,
-                'tags': tags}
+        return {
+            'name': name,
+            'location': location,
+            'rating': rating,
+            'reviews': reviews,
+            'tags': tags
+        }
 
-    def search_json(self, lng, lat, meters):
-        places = self.search(lng, lat, meters)
-        return jsonify(places=places)
-
-    def search(self, lng, lat, meters):
-        cursor = self.__db.reviews.find({"location": {'$near': {'$geometry':
-                                                                    {'type': "Point", 'coordinates': [lng, lat]},
-                                                                '$maxDistance': meters}}},
-                                        {'_id': 0, 'name': 1, 'rate': 1, 'location': 1})
+    def search(self, lat, lng, meters):
+        cursor = self.__db.reviews.find({
+            "location": {
+                '$near': {
+                    '$geometry': {
+                        'type': "Point",
+                        'coordinates': [lat, lng]
+                    },
+                    '$maxDistance': meters
+                }
+            }
+        },
+        {
+            '_id': 1,
+            'name': 1,
+            'rate': 1,
+            'location': 1
+        })
 
         places = []
         for place in cursor:

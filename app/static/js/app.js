@@ -4,6 +4,7 @@ const MAP_ACCESS_TOKEN = 'pk.eyJ1IjoicmJyaXNpdGEiLCJhIjoiY2p0amIyYjUyMGpvZzN5bDl
 const MAP_PROVIDER_URI = 'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}'
 const MAP_ATTRIBUTION = 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>'
 const MAP_MAX_AREA = 4000;
+const TPL_INFO_CARD = '<div class="col col-md-12 align-self-center scrollable-content">{HTML}</div>'
 
 var coords = {};
 var map = L.map('map');
@@ -88,7 +89,9 @@ function requestPlaces(center) {
         console.log(data);
         console.log(arguments);
 
-        setMarkers(data.places);
+        let places = data.places;
+        setMarkers(places);
+        createInfoCards(places);
         // Populate info cards
         // create click relationship
     }).done(function() {
@@ -104,17 +107,25 @@ function requestPlaces(center) {
 }
 
 function setMarkers(places) {
-    while(places.length) {
-        const p = places.pop();
-        console.log(p)
-        let marker = L.marker([p.lat, p.lng], {
-            title: p.name,
-            alt: p.name,
+    places.forEach(function(item) {
+        let marker = L.marker([item.lat, item.lng], {
+            title: item.name,
+            alt: item.name,
             riseOnHover: true
         }).addTo(map);
-        marker.bindPopup("<h5>" + p.name + "</h5>");
-    }
+        marker.bindPopup("<h5>" + item.name + "</h5>");
+    });
 }
 
+function createInfoCards(places) {
+    let html = '';
+    let info = '';
+    places.forEach(function(item) {
+        info = '<h4>' + item.name + '</h4><p>' + item.tags.join() + '<p>';
+        html += TPL_INFO_CARD.replace('{HTML}', info);
+    });
+
+    $('div.row .scrollable-row').html(html);
+}
 // GlobalEventHandlers.onload
 // map.setMaxBounds

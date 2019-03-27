@@ -5,10 +5,13 @@
 
 .scrollable {
     overflow-x: scroll;
+    overflow-y: unset;
 }
 
-.scrollable-width {
+.scrollable-row {
     width: 100vh;
+    height: unset;
+    min-height: unset;
 }
 
 .scrollable-content {
@@ -18,10 +21,13 @@
 @media (min-width: 768px) {
     .scrollable {
         overflow-x: unset;
+        overflow-y: scroll;
     }
 
-    .scrollable-width {
+    .scrollable-row {
         width: unset;
+        height: 480px;
+        min-height: 400px;
     }
 
     .scrollable-content {

@@ -3,6 +3,32 @@
     min-height: 400px;
 }
 
+.scrollable {
+    overflow-x: scroll;
+}
+
+.scrollable-width {
+    width: 100vh;
+}
+
+.scrollable-content {
+    height: 70px;
+}
+
+@media (min-width: 768px) {
+    .scrollable {
+        overflow-x: unset;
+    }
+
+    .scrollable-width {
+        width: unset;
+    }
+
+    .scrollable-content {
+        height: unset;
+    }
+}
+
 .spinner {
     margin: 200px auto;
     width: 100px;

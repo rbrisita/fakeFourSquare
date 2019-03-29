@@ -15,7 +15,7 @@
 }
 
 .scrollable-content {
-    height: 70px;
+
 }
 
 @media (min-width: 768px) {
@@ -28,10 +28,6 @@
         width: unset;
         height: 480px;
         min-height: 400px;
-    }
-
-    .scrollable-content {
-        height: unset;
     }
 }
 

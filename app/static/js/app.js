@@ -4,68 +4,29 @@ const MAP_ACCESS_TOKEN = 'pk.eyJ1IjoicmJyaXNpdGEiLCJhIjoiY2p0amIyYjUyMGpvZzN5bDl
 const MAP_PROVIDER_URI = 'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}'
 const MAP_ATTRIBUTION = 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>'
 const MAP_MAX_AREA = 4000;
-const TPL_INFO_CARD = '<div class="col col-md-12 align-self-center scrollable-content">{HTML}</div>'
+const TPL_INFO_CARD = '<div id="{ID}" class="col col-md-12 align-self-center scrollable-content">{HTML}</div>';
 
-var coords = {};
+var markers = [];
 var map = L.map('map');
-map.on('locationfound', function(ev) {
-    coords = [ev.latitude, ev.longitude];
-    showMap();
-    map.setZoom(MAP_ZOOM);
 
-    let marker = L.marker(coords, {
-        title: 'YOU!',
-        alt: 'Your location.',
-        riseOnHover: true
-    }).addTo(map);
-    marker.bindPopup("<h4>YOU!</h4>").openPopup();
-});
-map.on('locationerror', function(ev) {
-    showMap();
-    setView(getNYCCoords());
-});
-map.on('load', function(ev) {
-    console.log('Map Loaded');
-    console.log(ev);
-});
-map.on('zoomlevelschange', function(ev) {
-    let center = map.getBounds().getCenter();
-    let newBounds = center.toBounds(MAP_MAX_AREA);
-    map.setMaxBounds(newBounds);
+function showLocation(latLng) {
+    map.setView(latLng, MAP_ZOOM);
 
-    requestPlaces(center);
-});
+    map.on('zoomlevelschange', zoomLevelsChangeHandler);
 
-$(function() {
-    console.log("Handler for .ready() called.")
-    map.locate({
-        setView: true,
-    });
-});
-
-$(window).on( "load", function() {
-    console.log("Handler for window load called.")
-});
-
-
-function getNYCCoords() {
-    return [40.729243, -73.984423];
-}
-
-function setView(viewCoords) {
-    map.setView(viewCoords, MAP_ZOOM);
-}
-
-function showMap() {
-    let tileLayer = L.tileLayer(MAP_PROVIDER_URI, {
-        attribution: MAP_ATTRIBUTION,
-        maxZoom: 18,
-        minZoom: 14,
-        zoom: MAP_ZOOM,
-        id: 'mapbox.streets',
-        accessToken: MAP_ACCESS_TOKEN
+    let tileLayer = L.tileLayer(
+        MAP_PROVIDER_URI, {
+            attribution: MAP_ATTRIBUTION,
+            maxZoom: 18,
+            minZoom: 14,
+            id: 'mapbox.streets',
+            accessToken: MAP_ACCESS_TOKEN
     }).addTo(map);
 
+    spinnerToggle(tileLayer);
+}
+
+function spinnerToggle(tileLayer) {
     tileLayer.on('tileloadstart', function() {
         $('.spinner').removeClass('d-none');
     });
@@ -77,55 +38,123 @@ function showMap() {
     });
 }
 
-function requestPlaces(center) {
-    // Request places
-    // api/search/center.latitude/center.longitude/MAP_MAX_AREA
-    // api/search/-73.99159/40.728121/2000/
-    // populate info cards
-    // Allow rating of generated places
+function zoomLevelsChangeHandler(ev) {
+    map.off('zoomlevelschange', zoomLevelsChangeHandler);
 
-    $.get('api/search/' + center.lng + '/' + center.lat + '/' + Math.floor(MAP_MAX_AREA / 3), function(data) {
-        console.log('Response');
-        console.log(data);
-        console.log(arguments);
+    let center = map.getBounds().getCenter();
+    setLocationMarker(center);
+    restrictMapMovement(center);
 
-        let places = data.places;
-        setMarkers(places);
-        createInfoCards(places);
-        // Populate info cards
-        // create click relationship
-    }).done(function() {
-        console.log('Done');
-        console.log(arguments);
-    }).fail(function() {
-        console.log('Fail');
-        console.log(arguments);
-    }).always(function() {
-        console.log('Always');
-        console.log(arguments);
+    requestPlaces(center);
+}
+
+function setLocationMarker(center) {
+    let person = L.icon({
+        iconUrl: 'https://raw.githubusercontent.com/iconic/open-iconic/master/png/person-4x.png',
+        iconSize: [32, 32],
+        popupAnchor: [0, -16]
     });
+
+    let marker = L.marker(
+        center,
+        {
+            icon: person,
+            title: 'YOU!',
+            alt: 'Your location.',
+            riseOnHover: true
+    }).addTo(map);
+    marker.bindPopup('<h4>YOU!</h4>').openPopup();
+}
+
+function restrictMapMovement(center) {
+    let newBounds = center.toBounds(MAP_MAX_AREA);
+    map.setMaxBounds(newBounds);
+}
+
+function requestPlaces(center) {
+    $.get(
+        'api/search/' + center.lng + '/' + center.lat + '/' + Math.floor(MAP_MAX_AREA / 3),
+        function(data) {
+            let places = data.places;
+            setMarkers(places);
+            createInfoCards(places);
+            listenInfoCards();
+    });
+
+    // Test fail condition
 }
 
 function setMarkers(places) {
     places.forEach(function(item) {
-        let marker = L.marker([item.lat, item.lng], {
-            title: item.name,
-            alt: item.name,
-            riseOnHover: true
+        let marker = L.marker(
+            L.latLng(
+                parseFloat(item.lat),
+                parseFloat(item.lng)
+            ),{
+                title: item.name,
+                alt: item.name,
+                riseOnHover: true
         }).addTo(map);
-        marker.bindPopup("<h5>" + item.name + "</h5>");
+        markers[item._id] = marker.bindPopup('<h5>' + item.name + '</h5>');
     });
 }
 
 function createInfoCards(places) {
     let html = '';
     let info = '';
+
     places.forEach(function(item) {
         info = '<h4>' + item.name + '</h4><p>' + item.tags.join() + '<p>';
         html += TPL_INFO_CARD.replace('{HTML}', info);
+        html = html.replace('{ID}', item._id);
     });
 
-    $('div.row .scrollable-row').html(html);
+    $('div.row.scrollable-row').html(html);
 }
-// GlobalEventHandlers.onload
-// map.setMaxBounds
+
+function listenInfoCards() {
+    $('.scrollable-content').on('click', function() {
+        map.stop();
+
+        let id = $(this).attr('id');
+        let marker = markers[id];
+        let moveEndHandler = () => {
+            map.off('moveend', moveEndHandler);
+            marker.openPopup();
+        };
+
+        map.on('moveend', moveEndHandler);
+        map.flyTo(marker.getLatLng());
+    });
+}
+
+function getNYCLatLng() {
+    return  L.latLng(
+        40.729243,
+        -73.984423
+    );
+}
+
+/*
+ * Entry point to locate user.
+ */
+$(function() {
+    let locationFoundHandler = function(ev) {
+        map.off('locationfound', locationFoundHandler);
+        map.off('locationerror', locationErrorHandler);
+
+        showLocation(ev.latlng);
+    };
+
+    let locationErrorHandler = function(ev) {
+        map.off('locationfound', locationFoundHandler);
+        map.off('locationerror', locationErrorHandler);
+
+        showLocation(getNYCLatLng());
+    };
+
+    map.on('locationfound', locationFoundHandler);
+    map.on('locationerror', locationErrorHandler);
+
+    map.locate();
+});

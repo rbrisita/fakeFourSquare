@@ -11,11 +11,12 @@
 
 .card {
     display: inline-flex;
+    padding-left: 0px;
+    padding-right: 0px;
 }
 
 @media (min-width: 768px) {
     .scrollable {
-        display: flex;
         height: 480px;
         min-height: 400px;
         white-space: unset;
@@ -23,6 +24,10 @@
 
     .card {
         display: flex;
+    }
+
+    .icon-star {
+        white-space: nowrap;
     }
 }
 

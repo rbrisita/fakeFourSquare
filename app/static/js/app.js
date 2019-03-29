@@ -4,13 +4,22 @@ const MAP_ACCESS_TOKEN = 'pk.eyJ1IjoicmJyaXNpdGEiLCJhIjoiY2p0amIyYjUyMGpvZzN5bDl
 const MAP_PROVIDER_URI = 'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}'
 const MAP_ATTRIBUTION = 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>'
 const MAP_MAX_AREA = 4000;
-const TPL_INFO_CARD = '<div data-info-card id="{ID}" class="col col-md-12 align-self-center scrollable-content">{HTML}</div>';
-
-const TPL_CARD = '<div data-info-card id="{ID}" class="card" style="width: 18rem;"> \
-<div class="card-body"> \
-  <h5 class="card-title">{TITLE}</h5> \
-  <p class="card-text">{TAGS}</p> \
-</div> \
+const TPL_CARD = '\
+<div data-card id="{ID}" class="card border-dark col" style="width: 18rem;">\
+    <h5 class="card-header d-md-block d-none">{TITLE}</h5>\
+    <h6 class="card-header d-md-none font-weight-bold">{TITLE}</h6>\
+    <div class="card-body">\
+        <p class="card-text"><i data-feather="tag"></i>&nbsp<span class="font-weight-bold">{TAGS}</span></p>\
+        <div class="card-text row">\
+            <div class="col icon-star text-left">\
+                <a href="#" class="card-link font-weight-bold">{RATING}&nbsp<i data-feather="star"></i></a>\
+            </div><div class="col text-center">\
+                <a href="#" class="card-link"><i data-feather="message-square"></i></a>\
+            </div><div class="col text-right">\
+                <a href="#" class="card-link"><i data-feather="compass"></i></a>\
+            </div>\
+        </div>\
+    </div>\
 </div>';
 
 var markers = [];
@@ -84,11 +93,12 @@ function requestPlaces(center) {
         function(data) {
             let places = data.places;
             setMarkers(places);
-            createInfoCards(places);
-            listenInfoCards();
+            createCards(places);
+            listenCards();
     });
 
     // Test fail condition
+    // Modal pop up
 }
 
 function setMarkers(places) {
@@ -106,27 +116,23 @@ function setMarkers(places) {
     });
 }
 
-function createInfoCards(places) {
+function createCards(places) {
     let html = '';
-    let info = '';
-
-    // places.forEach(function(item) {
-    //     info = '<h4>' + item.name + '</h4><p>' + item.tags.join() + '<p>';
-    //     html += TPL_INFO_CARD.replace('{HTML}', info);
-    //     html = html.replace('{ID}', item._id);
-    // });
 
     places.forEach(function(item) {
-        html += TPL_CARD.replace('{TITLE}', item.name);
-        html = html.replace('{TAGS}', item.tags.join());
+        html += TPL_CARD.replace(/{TITLE}/g, item.name);
+        html = html.replace('{TAGS}', item.tags.join(', '));
         html = html.replace('{ID}', item._id);
+        html = html.replace('{RATING}', (Math.floor(Math.random() * 5 + 1)));
     });
 
     $('div.row.scrollable').html(html);
+
+    feather.replace();
 }
 
-function listenInfoCards() {
-    $('[data-info-card]').on('click', function() {
+function listenCards() {
+    $('[data-card]').on('click', function() {
         map.stop();
 
         let id = $(this).attr('id');

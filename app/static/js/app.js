@@ -4,7 +4,14 @@ const MAP_ACCESS_TOKEN = 'pk.eyJ1IjoicmJyaXNpdGEiLCJhIjoiY2p0amIyYjUyMGpvZzN5bDl
 const MAP_PROVIDER_URI = 'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}'
 const MAP_ATTRIBUTION = 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>'
 const MAP_MAX_AREA = 4000;
-const TPL_INFO_CARD = '<div id="{ID}" class="col col-md-12 align-self-center scrollable-content">{HTML}</div>';
+const TPL_INFO_CARD = '<div data-info-card id="{ID}" class="col col-md-12 align-self-center scrollable-content">{HTML}</div>';
+
+const TPL_CARD = '<div data-info-card id="{ID}" class="card" style="width: 18rem;"> \
+<div class="card-body"> \
+  <h5 class="card-title">{TITLE}</h5> \
+  <p class="card-text">{TAGS}</p> \
+</div> \
+</div>';
 
 var markers = [];
 var map = L.map('map');
@@ -103,17 +110,23 @@ function createInfoCards(places) {
     let html = '';
     let info = '';
 
+    // places.forEach(function(item) {
+    //     info = '<h4>' + item.name + '</h4><p>' + item.tags.join() + '<p>';
+    //     html += TPL_INFO_CARD.replace('{HTML}', info);
+    //     html = html.replace('{ID}', item._id);
+    // });
+
     places.forEach(function(item) {
-        info = '<h4>' + item.name + '</h4><p>' + item.tags.join() + '<p>';
-        html += TPL_INFO_CARD.replace('{HTML}', info);
+        html += TPL_CARD.replace('{TITLE}', item.name);
+        html = html.replace('{TAGS}', item.tags.join());
         html = html.replace('{ID}', item._id);
     });
 
-    $('div.row.scrollable-row').html(html);
+    $('div.row.scrollable').html(html);
 }
 
 function listenInfoCards() {
-    $('.scrollable-content').on('click', function() {
+    $('[data-info-card]').on('click', function() {
         map.stop();
 
         let id = $(this).attr('id');

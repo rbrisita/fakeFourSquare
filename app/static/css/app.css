@@ -4,30 +4,25 @@
 }
 
 .scrollable {
+    display: block;
     overflow-x: scroll;
-    overflow-y: unset;
+	white-space: nowrap;
 }
 
-.scrollable-row {
-    width: 100vh;
-    height: unset;
-    min-height: unset;
-}
-
-.scrollable-content {
-
+.card {
+    display: inline-flex;
 }
 
 @media (min-width: 768px) {
     .scrollable {
-        overflow-x: unset;
-        overflow-y: scroll;
-    }
-
-    .scrollable-row {
-        width: unset;
+        display: flex;
         height: 480px;
         min-height: 400px;
+        white-space: unset;
+    }
+
+    .card {
+        display: flex;
     }
 }
 

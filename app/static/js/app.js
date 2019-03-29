@@ -184,10 +184,11 @@ function listenModal() {
             let html = '';
             reviews.forEach(function(item) {
                 html += '<h5>' + item.blurb + '</h5>';
-                html += '<b class="float-left">' + item.rating + 'stars</b>';
+                html += '<b class="float-left">' + item.rating + ' stars</b>';
                 html += '<b class="float-right">' + item.date + '</b>';
             });
 
+            $('.modal-title').html(name + ' Reviews');
             $('.modal-body').html(html);
         });
 

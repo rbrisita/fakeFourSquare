@@ -81,14 +81,8 @@ def get_home(path=''):
     # form['tags'] = arr_tag
     # form['location'] = _dictLocations[name]
 
-# get reviews
+
 # post review
-
-# search by name
-# search by tags
-# search by rating
-# search by location
-
 @_app.route('/review/<name>/')
 def get_review_form(name=''):
     """ Get review form page so a user can post a review. """
@@ -105,10 +99,18 @@ def post_review(name):
 
     return redirect(url_for('get_business', name=name))
 
+# get reviews
+@_app.route('/api/places/<place_id>/')
+def get_places_json(place_id):
+    """ Return json representation of reviews for given place id. """
+    reviews = _api.request_reviews_by_id(place_id)
+    return jsonify(reviews=reviews)
+
 @_app.route('/api/business/<name>/')
 def get_business_json(name):
     """ Return json representation of business request. """
-    return jsonify(_api.request_reviews(name))
+    return jsonify(_api.request_reviews_by_id(name))
+    # return jsonify(_api.request_reviews(name))
 
 
 @_app.route('/business/<name>/')
@@ -120,6 +122,10 @@ def get_business(name):
 
     return render_template(TPL_BUSINESS, business=business)
 
+# search by name
+# search by tags
+# search by rating
+# search by location
 
 @_app.route('/api/search/<float:lng>/<float:lat>/')
 @_app.route('/api/search/<float:lng>/<float:lat>/<int:meters>/')

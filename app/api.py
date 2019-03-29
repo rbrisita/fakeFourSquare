@@ -1,6 +1,9 @@
 import datetime
 import logging
 
+from pymongo import DESCENDING
+from bson.objectid import ObjectId
+
 class Api:
     """
     Responsible for CRUD operations on database and supplying json response.
@@ -38,6 +41,55 @@ class Api:
         # self._db.reviews.update({_id:{name, location}}, {$set:{review:review}}, upsert=True)
 
         self._db.reviews.insert(review)
+
+    def request_reviews_by_id(self, place_id):
+        # cursor = self._db.reviews.find({
+        #     'place_id': ObjectId(place_id)
+        # },{
+        #     '_id': 0,
+        #     'place_id': 0
+        # }).sort('date', direction=DESCENDING)
+
+        # db.reviews.aggregate([{$match:{place_id:ObjectId('5c9d90db628f7951265469eb')}},{$project:{date:{$dateToString:{date:'$date',format:'%Y-%m-%dT%H:%M:%S.%LZ'}}, _id: 0, rating: 1, blurb: 1}}])
+
+        cursor = self._db.reviews.aggregate([{
+            '$match': {
+                'place_id': ObjectId(place_id)
+        }},{
+            '$project': {
+                'date': {
+                    '$dateToString': {
+                        'date': '$date',
+                        'format': '%Y-%m-%dT%H:%M:%S.%LZ'
+                    }
+                },
+                '_id': 0,
+                'rating': 1,
+                'blurb': 1
+            }
+        }],
+            cursor={}
+        )
+
+        # {
+        #     "_id" : ObjectId("5c9d90dc628f7951265469f9"),
+        #     "date" : ISODate("2019-03-26T05:30:56Z"),
+        #     "blurb" : "Section investment on gun young. Meeting before another body. Civil quite others his other life edge network.",
+        #     "rating" : 1,
+        #     "place_id" : ObjectId("5c9d90db628f7951265469ee")
+        # }
+
+        # Reviews
+        # date
+        # blurb
+        # rating
+
+        reviews = []
+        for r in cursor:
+            logging.debug("%s", r)
+            reviews.append(r)
+
+        return reviews
 
     def request_reviews(self, name):
         cursor = self._db.reviews.find({'name': name}).sort('date', direction=-1)
@@ -80,8 +132,6 @@ class Api:
                 }
             }
         })
-
-        logging.debug("%s", cursor)
 
         places = []
         for p in cursor:

@@ -6,17 +6,25 @@ const MAP_ATTRIBUTION = 'Map data &copy; <a href="https://www.openstreetmap.org/
 const MAP_MAX_AREA = 4000;
 const TPL_CARD = '\
 <div data-card id="{ID}" class="card border-dark col" style="width: 18rem;">\
-    <h5 class="card-header d-md-block d-none">{TITLE}</h5>\
-    <h6 class="card-header d-md-none font-weight-bold">{TITLE}</h6>\
+    <h5 class="card-header d-md-block d-none text-truncate">{TITLE}</h5>\
+    <h6 class="card-header d-md-none font-weight-bold text-truncate">{TITLE}</h6>\
     <div class="card-body">\
         <p class="card-text"><i data-feather="tag"></i>&nbsp<span class="font-weight-bold">{TAGS}</span></p>\
         <div class="card-text row">\
             <div class="col icon-star text-left">\
-                <a href="#" class="card-link font-weight-bold">{RATING}&nbsp<i data-feather="star"></i></a>\
-            </div><div class="col text-center">\
-                <a href="#" class="card-link"><i data-feather="message-square"></i></a>\
-            </div><div class="col text-right">\
-                <a href="#" class="card-link"><i data-feather="compass"></i></a>\
+                <a href="#appModal" class="card-link" data-icon-type=1 data-toggle="modal" data-target="#appModal">\
+                    <span class="font-weight-bold">{RATING}</span>&nbsp<i data-feather="star"></i>\
+                </a>\
+            </div>\
+            <div class="col text-center">\
+                <a href="#appModal" class="card-link" data-icon-type=2 data-toggle="modal" data-target="#appModal">\
+                    <i data-feather="message-square"></i>\
+                </a>\
+            </div>\
+            <div class="col text-right">\
+                <a href="#appModal" class="card-link" data-icon-type=3 data-toggle="modal" data-target="#appModal">\
+                    <i data-feather="compass"></i>\
+                </a>\
             </div>\
         </div>\
     </div>\
@@ -95,6 +103,7 @@ function requestPlaces(center) {
             setMarkers(places);
             createCards(places);
             listenCards();
+            listenModal();
     });
 
     // Test fail condition
@@ -145,6 +154,80 @@ function listenCards() {
         map.on('moveend', moveEndHandler);
         map.flyTo(marker.getLatLng());
     });
+}
+
+function listenModal() {
+    $('#appModal').on('show.bs.modal', (ev) => {
+        let icon = $(ev.relatedTarget);
+        let type = icon.data('icon-type');
+        let card = icon.closest('[data-card]');
+        let id = card.attr('id');
+        let name = card.find('.card-header').first().text();
+
+        // TODO test icon type for specfic config
+        let config = {
+            title: name + ' Reviews',
+            body: 'Requesting reviews...',
+            hideClose: true,
+            hideButtons: true
+        };
+
+        prepareModal(config);
+
+        // Request reviews for id
+        // TODO: Needs better API api/places/id/reviews is better
+        $.get('api/places/' + id, (data) => {
+            resetModal();
+
+            reviews = data.reviews;
+
+            let html = '';
+            reviews.forEach(function(item) {
+                html += '<h5>' + item.blurb + '</h5>';
+                html += '<b class="float-left">' + item.rating + 'stars</b>';
+                html += '<b class="float-right">' + item.date + '</b>';
+            });
+
+            $('.modal-body').html(html);
+        });
+
+        // TODO Test failure case
+
+    });
+
+    $('#appModal').on('hidden.bs.modal', (ev) => {
+        console.log(this);
+        console.log(ev);
+    });
+}
+
+function prepareModal(config) {
+    $('.modal-title').html(config.title);
+    $('.modal-body').html(config.body);
+
+    if (config.hideClose) {
+        $('.close').hide();
+    } else {
+        $('.close').show();
+    }
+
+    if (config.hideButtons) {
+        $('.modal-footer').hide();
+    } else {
+        $('.modal-footer').show();
+    }
+
+}
+
+function resetModal() {
+    let config = {
+        title: '',
+        body: '',
+        hideClose: false,
+        hideButtons: false
+    }
+
+    prepareModal(config);
 }
 
 function getNYCLatLng() {

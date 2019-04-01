@@ -1,3 +1,4 @@
+from datetime import datetime
 import math
 
 from faker.providers import company
@@ -18,7 +19,8 @@ class Place(Generator):
         return {
             'name': self.generate_name(),
             'location': self.generate_location(lng, lat, meters),
-            'tags': self.generate_tags()
+            'tags': self.generate_tags(),
+            'created_at': datetime.utcnow()
         }
 
     def generate_name(self):
@@ -44,7 +46,6 @@ class Place(Generator):
 
         new_lng = lng + dLng * 180 / pi
         new_lat = lat + dLat * 180 / pi
-
 
         return [new_lng, new_lat]
 

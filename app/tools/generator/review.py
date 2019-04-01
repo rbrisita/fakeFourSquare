@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from faker.providers import date_time, lorem
 
 from tools.generator.generator import Generator
@@ -16,7 +18,8 @@ class Review(Generator):
         return  {
             'date': self.generate_date(),
             'blurb': self.generate_blurb(),
-            'rating': self.generate_rating()
+            'rating': self.generate_rating(),
+            'created_at': datetime.utcnow()
         }
 
     def generate_date(self):

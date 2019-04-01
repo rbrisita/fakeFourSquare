@@ -2,6 +2,8 @@
 Seed database with test data and add indexes.
 """
 
+import random
+
 from pymongo import GEOSPHERE, ASCENDING
 
 from tools.generator.place import Place
@@ -10,6 +12,7 @@ from tools.generator.review import Review
 class DatabaseSeeder:
     def __init__(self, db):
         self._db = db
+        random.seed(42)
 
     def clear(self):
         self._db.places.drop()
@@ -34,9 +37,10 @@ class DatabaseSeeder:
         reviews = []
         while ids:
             place_id = ids.pop()
-            r = review.generate()
-            r['place_id'] = place_id
-            reviews.append(r)
+            for _ in range(random.randrange(1, 5)):
+                r = review.generate()
+                r['place_id'] = place_id
+                reviews.append(r)
 
         db.reviews.insert(reviews)
 
@@ -44,8 +48,11 @@ class DatabaseSeeder:
         db = self._db
 
         # Create Index according to current data access patterns
-        db.places.ensure_index([("name", ASCENDING)])
         db.places.ensure_index([("location", GEOSPHERE)])
         db.places.ensure_index([("tags", ASCENDING)])
 
         db.reviews.ensure_index([("rating", ASCENDING)])
+
+        # Indexes for ttl deletions
+        db.places.ensure_index([("created_at", ASCENDING)], expireAfterSeconds=600)
+        db.reviews.ensure_index([("created_at", ASCENDING)], expireAfterSeconds=600)

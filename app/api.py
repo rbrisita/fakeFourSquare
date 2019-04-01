@@ -6,7 +6,7 @@ from bson.objectid import ObjectId
 
 class Api:
     """
-    Responsible for CRUD operations on database and supplying json response.
+    Responsible for CRUD operations on database.
     """
 
     def __init__(self, db):
@@ -43,46 +43,40 @@ class Api:
         self._db.reviews.insert(review)
 
     def request_reviews_by_id(self, place_id):
-        # cursor = self._db.reviews.find({
-        #     'place_id': ObjectId(place_id)
-        # },{
-        #     '_id': 0,
-        #     'place_id': 0
-        # }).sort('date', direction=DESCENDING)
+        """ Return reviews associated with given ObjectId.
+        {
+            "_id" : ObjectId,
+            "date" : ISODate,
+            "blurb" : Text,
+            "rating" : Int,
+            "place_id" : ObjectId
+        }
+        """
+        cursor = self._db.reviews.find({
+            'place_id': ObjectId(place_id)
+        },{
+            '_id': 0,
+            'place_id': 0
+        }).sort('date', direction=DESCENDING)
 
-        # db.reviews.aggregate([{$match:{place_id:ObjectId('5c9d90db628f7951265469eb')}},{$project:{date:{$dateToString:{date:'$date',format:'%Y-%m-%dT%H:%M:%S.%LZ'}}, _id: 0, rating: 1, blurb: 1}}])
-
-        cursor = self._db.reviews.aggregate([{
-            '$match': {
-                'place_id': ObjectId(place_id)
-        }},{
-            '$project': {
-                'date': {
-                    '$dateToString': {
-                        'date': '$date',
-                        'format': '%Y-%m-%dT%H:%M:%S.%LZ'
-                    }
-                },
-                '_id': 0,
-                'rating': 1,
-                'blurb': 1
-            }
-        }],
-            cursor={}
-        )
-
-        # {
-        #     "_id" : ObjectId("5c9d90dc628f7951265469f9"),
-        #     "date" : ISODate("2019-03-26T05:30:56Z"),
-        #     "blurb" : "Section investment on gun young. Meeting before another body. Civil quite others his other life edge network.",
-        #     "rating" : 1,
-        #     "place_id" : ObjectId("5c9d90db628f7951265469ee")
-        # }
-
-        # Reviews
-        # date
-        # blurb
-        # rating
+        # cursor = self._db.reviews.aggregate([{
+        #     '$match': {
+        #         'place_id': ObjectId(place_id)
+        # }},{
+        #     '$project': {
+        #         'date': {
+        #             '$dateToString': {
+        #                 'date': '$date',
+        #                 'format': '%Y-%m-%dT%H:%M:%S.%LZ'
+        #             }
+        #         },
+        #         '_id': 0,
+        #         'rating': 1,
+        #         'blurb': 1
+        #     }
+        # }],
+        #     cursor={}
+        # )
 
         reviews = []
         for r in cursor:
@@ -121,17 +115,57 @@ class Api:
         }
 
     def search(self, lng, lat, meters):
-        cursor = self._db.places.find({
-            'location': {
-                '$near': {
-                    '$geometry': {
-                        'type': 'Point',
-                        'coordinates': [lng, lat]
+        """ Return places up to given meters from given coordinates. """
+        # cursor = self._db.places.find({
+        #     'location': {
+        #         '$near': {
+        #             '$geometry': {
+        #                 'type': 'Point',
+        #                 'coordinates': [lng, lat]
+        #             },
+        #             '$maxDistance': meters
+        #         }
+        #     }
+        # })
+
+        cursor = self._db.places.aggregate(
+            [{
+                '$geoNear': {
+                    'spherical': True, # Needed for versions < 4.0
+                    'near': {
+                        'type':'Point',
+                        'coordinates': [
+                            lng,
+                            lat
+                        ]
                     },
-                    '$maxDistance': meters
+                    'distanceField': 'distance',
+                    'maxDistance': meters
                 }
-            }
-        })
+            },{
+                '$lookup': {
+                    'from': 'reviews',
+                    'localField': '_id',
+                    'foreignField': 'place_id',
+                    'as': 'place_ratings'
+                }
+            },{
+                '$project': {
+                    '_id': 1,
+                    'name': 1,
+                    'location': 1,
+                    'tags': 1,
+                    'distance': 1,
+                    'ratings_avg': {
+                        '$avg': '$place_ratings.rating'
+                    },
+                    'ratings_total': {
+                        '$size': '$place_ratings.rating'
+                    }
+                }
+            }],
+            cursor={}
+        )
 
         places = []
         for p in cursor:

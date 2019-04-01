@@ -132,7 +132,7 @@ function createCards(places) {
         html += TPL_CARD.replace(/{TITLE}/g, item.name);
         html = html.replace('{TAGS}', item.tags.join(', '));
         html = html.replace('{ID}', item._id);
-        html = html.replace('{RATING}', (Math.floor(Math.random() * 5 + 1)));
+        html = html.replace('{RATING}', item.ratings_avg);
     });
 
     $('div.row.scrollable').html(html);

@@ -52,6 +52,10 @@ class Api:
             "place_id" : ObjectId
         }
         """
+        reviews = []
+        if not self._db.reviews.count():
+            return reviews
+
         cursor = self._db.reviews.find({
             'place_id': ObjectId(place_id)
         },{
@@ -78,7 +82,6 @@ class Api:
         #     cursor={}
         # )
 
-        reviews = []
         for r in cursor:
             logging.debug("%s", r)
             reviews.append(r)
@@ -116,6 +119,10 @@ class Api:
 
     def search(self, lng, lat, meters):
         """ Return places up to given meters from given coordinates. """
+        places = []
+        if not self._db.places.count():
+            return places
+
         # cursor = self._db.places.find({
         #     'location': {
         #         '$near': {
@@ -167,7 +174,6 @@ class Api:
             cursor={}
         )
 
-        places = []
         for p in cursor:
             p['_id'] = str(p['_id'])
             location = p.pop('location', [0, 0])

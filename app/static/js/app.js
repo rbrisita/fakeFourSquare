@@ -29,6 +29,12 @@ const TPL_CARD = '\
         </div>\
     </div>\
 </div>';
+const TPL_REVIEW = '\
+<div class="row mb-3 border border-dark rounded">\
+    <div class="col-12 lead">{BLURB}</div>\
+    <div class="col-6 text-left">{RATING}&nbsp<i data-feather="star"></i></div>\
+    <div class="col-6 small text-right text-muted">{DATE}</div>\
+</div>';
 
 var markers = [];
 var map = L.map('map');
@@ -132,7 +138,7 @@ function createCards(places) {
         html += TPL_CARD.replace(/{TITLE}/g, item.name);
         html = html.replace('{TAGS}', item.tags.join(', '));
         html = html.replace('{ID}', item._id);
-        html = html.replace('{RATING}', item.ratings_avg);
+        html = html.replace('{RATING}', parseFloat(item.ratings_avg.toFixed(2)));
     });
 
     $('div.row.scrollable').html(html);
@@ -148,6 +154,7 @@ function listenCards() {
             return;
         }
 
+        // Stop any prior animation
         map.stop();
 
         let id = $(this).attr('id');
@@ -189,13 +196,15 @@ function listenModal() {
 
             let html = '';
             reviews.forEach(function(item) {
-                html += '<h5>' + item.blurb + '</h5>';
-                html += '<b class="float-left">' + item.rating + ' stars</b>';
-                html += '<b class="float-right">' + item.date + '</b>';
+                html += TPL_REVIEW.replace('{BLURB}', item.blurb);
+                html = html.replace('{RATING}', item.rating);
+                html = html.replace('{DATE}', item.date);
             });
 
             $('.modal-title').html(name + ' Reviews');
-            $('.modal-body').html(html);
+            $('.modal-body .container-fluid').html(html);
+
+            feather.replace();
         });
 
         // TODO Test failure case
@@ -210,7 +219,7 @@ function listenModal() {
 
 function prepareModal(config) {
     $('.modal-title').html(config.title);
-    $('.modal-body').html(config.body);
+    $('.modal-body .container-fluid').html(config.body);
 
     if (config.hideClose) {
         $('.close').hide();

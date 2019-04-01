@@ -141,7 +141,13 @@ function createCards(places) {
 }
 
 function listenCards() {
-    $('[data-card]').on('click', function() {
+    $('[data-card]').on('click', function(ev) {
+        // Don't act on internal card links or it's contents.
+        let parents = $(ev.target).parents('.card-link');
+        if (parents.length || $(ev.target).hasClass('card-link')) {
+            return;
+        }
+
         map.stop();
 
         let id = $(this).attr('id');

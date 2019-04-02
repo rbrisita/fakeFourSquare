@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 import logging
 
 from pymongo import DESCENDING
@@ -12,44 +12,32 @@ class Api:
     def __init__(self, db):
         self._db = db
 
-    def save_review(self, dictForm):
+    def save_place_review(self, place_id, blurb, rating):
+        """ Save review associated with given place_id. """
+        date = datetime.utcnow()
         review = {
-            'date': datetime.datetime.utcnow(),
-            'name': dictForm['name'],
-            'location': dictForm['location'],
-            'rate': dictForm['rate'],
-            'review': dictForm['review'],
-            'tags': dictForm['tags']
+            'date': date,
+            'blurb': blurb,
+            'rating': rating,
+            'place_id': ObjectId(place_id),
+            'created_at': date
         }
 
         # Check ObjectId
-        # Check name (force lower case) and location given
 
-        # There should be multiple documents: places and reviews
-        # name, location
-        # rate, review, date
-        # tags can be an array because tags are usually short words less that 12 bytes (a size of an ObjectId)
-        # after long term usuage where there are multiple instances of the same tag
-        # (> 12 bytes) than a tags ObjectId manual reference can be created.
-        # a place has many reviews and many tags
-        # tags can point to many places (index on tags)
-        # a review is to one place
+        # Check ttl?
 
-        # review = {date, review}
-        # db.reviews.update({_id:{name:'mytest', location:[1,2]}}, {rate:1}, {upsert:1})
-        # db.reviews.find({_id:{name:'mytest', location:[1,2]}})
-        # self._db.reviews.update({_id:{name, location}}, {$set:{review:review}}, upsert=True)
+        return self._db.reviews.insert(review)
 
-        self._db.reviews.insert(review)
-
-    def request_reviews_by_id(self, place_id):
-        """ Return reviews associated with given ObjectId.
+    def request_place_reviews(self, place_id):
+        """ Return reviews associated with given place_id.
         {
             "_id" : ObjectId,
             "date" : ISODate,
             "blurb" : Text,
             "rating" : Int,
-            "place_id" : ObjectId
+            "place_id" : ObjectId,
+            "created_at": ISODate
         }
         """
         reviews = []
@@ -60,7 +48,8 @@ class Api:
             'place_id': ObjectId(place_id)
         },{
             '_id': 0,
-            'place_id': 0
+            'place_id': 0,
+            'created_at': 0
         }).sort('date', direction=DESCENDING)
 
         # cursor = self._db.reviews.aggregate([{
@@ -87,35 +76,6 @@ class Api:
             reviews.append(r)
 
         return reviews
-
-    def request_reviews(self, name):
-        cursor = self._db.reviews.find({'name': name}).sort('date', direction=-1)
-        if not cursor.count():
-            return {}
-
-        location = []
-        rating = 0
-        reviews = []
-        tags = []
-        for review in cursor:
-            rating += int(review['rate'])
-            reviews.append({'date': review['date'].strftime("%A, %B %d %Y at %I:%M%p"), 'review': review['review']})
-            tags += review['tags']
-
-            if not location:
-                location = review['location']
-
-        tags = list(set(tags))  # no duplicates
-        tags.sort()
-        rating = round(float(rating) / float(cursor.count()), 2)
-
-        return {
-            'name': name,
-            'location': location,
-            'rating': rating,
-            'reviews': reviews,
-            'tags': tags
-        }
 
     def search(self, lng, lat, meters):
         """ Return places up to given meters from given coordinates. """

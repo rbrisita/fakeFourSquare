@@ -32,12 +32,12 @@
     <li><a href="/api/search/-73.99159/40.728121/100/">Search 100 meters</a></li>
     <li><a href="/api/search/-73.99159/40.728121/1000/">Search 1000 meters</a></li>
 </ul> -->
-<div id="appModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="appModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
+<div id="appModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="app-modal-label" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="appModalLabel">Modal title</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <h5 class="modal-title" id="app-modal-label">Modal title</h5>
+                <button id="icon-close" type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -46,7 +46,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary">Save changes</button>
+                <button id="request-review" type="button" class="btn btn-danger"><i data-feather="plus-square"></i></button>
             </div>
         </div>
     </div>
@@ -68,7 +68,7 @@
             </div>
         </div>
         <div class="col-12 col-sm-3">
-                <div class="row scrollable"></div>
+            <div class="row scrollable"></div>
         </div>
     </div>
     <div class="row">

@@ -15,6 +15,14 @@
     padding-right: 0px;
 }
 
+#review-rating svg:hover {
+    fill: yellow;
+}
+
+.selected {
+    fill: yellow;
+}
+
 @media (min-width: 768px) {
     .scrollable {
         height: 480px;

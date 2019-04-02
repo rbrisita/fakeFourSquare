@@ -81,48 +81,46 @@ def get_home(path=''):
     # form['tags'] = arr_tag
     # form['location'] = _dictLocations[name]
 
+    # @_app.route('/api/places/<place_id>/')
+    # @_app.route('/api/reviews/<review_id>/')
 
-# post review
-@_app.route('/review/<name>/')
-def get_review_form(name=''):
-    """ Get review form page so a user can post a review. """
-    return render_template(TPL_REVIEW_FORM, name=name)
-
-
-@_app.route('/review/<name>/post/', methods=["POST"])
-def post_review(name):
-    """
-    Post a review about given business name.
+@_app.route('/api/places/<place_id>/reviews', methods=["POST"])
+@_app.route('/api/places/<place_id>/reviews/', methods=["POST"])
+def post_place_review(place_id):
+    """ Post a review about given place id.
     Unpack request form and pass to api.
     """
-    _api.save_review(request.form.copy())
+    logging.debug('post_review')
+    logging.debug(request.form)
 
-    return redirect(url_for('get_business', name=name))
+    blurb = request.form['blurb']
+    rating = int(request.form['rating'])
 
-# get reviews
-@_app.route('/api/places/<place_id>/')
-def get_places_json(place_id):
+    errors = {}
+    if 3 > len(blurb) > 255:
+        errors['blurb'] = 'Review is either too short or too long. Please revise.'
+
+    if 1 > rating > 5:
+        errors['rating'] = 'Rating is not in acceptable range. Please revise.'
+
+    if errors:
+        return jsonify(error=errors)
+
+    review_id = _api.save_place_review(place_id, blurb, rating)
+    logging.debug('save_review returned')
+    logging.debug(review_id)
+    if not review_id:
+        errors['review'] = 'Review not saved.'
+        return jsonify(error=errors)
+
+    return jsonify(data={'review_id':str(review_id)}), 201
+
+@_app.route('/api/places/<place_id>/reviews/')
+def get_place_reviews(place_id):
     """ Return json representation of reviews for given place id. """
-    reviews = _api.request_reviews_by_id(place_id)
+    reviews = _api.request_place_reviews(place_id)
     return jsonify(reviews=reviews)
 
-@_app.route('/api/business/<name>/')
-def get_business_json(name):
-    """ Return json representation of business request. """
-    return jsonify(_api.request_reviews_by_id(name))
-    # return jsonify(_api.request_reviews(name))
-
-
-@_app.route('/business/<name>/')
-def get_business(name):
-    """ Get business reviews by given name. """
-    business = _api.request_reviews(name)
-    if not business:
-        return redirect(url_for('get_home'))
-
-    return render_template(TPL_BUSINESS, business=business)
-
-# search by name
 # search by tags
 # search by rating
 # search by location

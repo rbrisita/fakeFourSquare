@@ -35,6 +35,37 @@ const TPL_REVIEW = '\
     <div class="col-6 text-left">{RATING}&nbsp<i data-feather="star"></i></div>\
     <div class="col-6 small text-right text-muted">{DATE}</div>\
 </div>';
+const FORM_REVIEW = '\
+<div class="row">\
+    <div class="col">\
+        <form id="review-form" name="review-form" novalidate>\
+            <div class="form-group">\
+                <label class="h5" for="blurb">Review</label>\
+                <span id="review-blurb--error" class="d-none text-danger small"><strong>Please write a review.</strong></span>\
+                <textarea\
+                    required\
+                    class="form-control"\
+                    id="review-blurb"\
+                    name="review-blurb"\
+                    spellcheck="true"\
+                    minlength="3"\
+                    maxlength="255"\
+                    placeholder="Please enter review here of 3-255 characters."\
+                    rows="8"\
+                    cols="30"></textarea>\
+            </div>\
+            <div id="review-rating" class="form-group">\
+                <i data-feather="star"></i>\
+                <i data-feather="star"></i>\
+                <i data-feather="star"></i>\
+                <i data-feather="star"></i>\
+                <i data-feather="star"></i>\
+                <span id="review-rating--error" class="d-none text-danger small"><strong>Please choose a rating.</strong></span>\
+            </div>\
+            <button type="submit" class="btn btn-primary float-right">Submit</button>\
+        </form>\
+    </div>\
+</div>'
 
 var markers = [];
 var map = L.map('map');
@@ -103,13 +134,13 @@ function restrictMapMovement(center) {
 
 function requestPlaces(center) {
     $.get(
-        'api/search/' + center.lng + '/' + center.lat + '/' + Math.floor(MAP_MAX_AREA / 3),
+        'api/search/' + center.lng + '/' + center.lat + '/' + Math.floor(MAP_MAX_AREA / 3) + '/',
         function(data) {
             let places = data.places;
             setMarkers(places);
             createCards(places);
-            listenCards();
-            listenModal();
+            cardEventHandler();
+            modalEventHandler();
     });
 
     // Test fail condition
@@ -146,7 +177,7 @@ function createCards(places) {
     feather.replace();
 }
 
-function listenCards() {
+function cardEventHandler() {
     $('[data-card]').on('click', function(ev) {
         // Don't act on internal card links or it's contents.
         let parents = $(ev.target).parents('.card-link');
@@ -169,7 +200,7 @@ function listenCards() {
     });
 }
 
-function listenModal() {
+function modalEventHandler() {
     $('#appModal').on('show.bs.modal', (ev) => {
         let icon = $(ev.relatedTarget);
         let type = icon.data('icon-type');
@@ -177,19 +208,20 @@ function listenModal() {
         let id = card.attr('id');
         let name = card.find('.card-header').first().text();
 
+        window.place_name = name;
+        window.place_id = id;
+
         // TODO test icon type for specfic config
         let config = {
             title: name + ' Reviews',
             body: 'Requesting reviews...',
-            hideClose: true,
-            hideButtons: true
+            hide_close: true,
+            hide_buttons: true
         };
-
         prepareModal(config);
 
         // Request reviews for id
-        // TODO: Needs better API api/places/id/reviews is better
-        $.get('api/places/' + id, (data) => {
+        $.get('api/places/' + id + '/reviews/', (data) => {
             resetModal();
 
             reviews = data.reviews;
@@ -215,19 +247,108 @@ function listenModal() {
         console.log(this);
         console.log(ev);
     });
+
+    $('#request-review').on('click', function(ev) {
+        console.log('#request-review');
+        let config = {
+            title: 'Add ' + window.place_name + ' Review',
+            body: FORM_REVIEW.replace('{ID}', window.place_id),
+            hide_close: false,
+            hide_buttons: true
+        };
+        prepareModal(config);
+        feather.replace();
+
+        let reviewRatingHandler = function(ev) {
+            let selected = (ev.target.nodeName != 'svg') ? ev.target.parentNode : ev.target;
+            if (selected.nodeName != 'svg') {
+                return;
+            }
+
+            $('#review-rating--error').addClass('d-none');
+
+            let svgs = $('#review-rating svg');
+            svgs.removeClass('selected');
+            svgs.each(function() {
+                $(this).addClass('selected');
+                if (this === selected) {
+                    return false;
+                }
+            });
+        };
+        $('#review-rating').on('click', reviewRatingHandler);
+        $('#review-blurb').on('focus', function(ev) {
+            $('#review-blurb--error').addClass('d-none');
+        });
+
+        $('#review-form').on('submit', function(ev) {
+            console.log(ev);
+
+            ev.preventDefault();
+            ev.stopPropagation();
+
+            let blurb = $('#review-blurb').val().trim().replace(/\s+/,' ');
+            let rating = $('#review-rating svg.selected').length;
+            console.log(blurb);
+            console.log(rating);
+
+            let blurb_error = (blurb.length < 3);
+            let rating_error = (!rating);
+
+            if (blurb_error) {
+                $('#review-blurb--error').removeClass('d-none');
+            } else {
+                $('#review-blurb--error').addClass('d-none');
+            }
+
+            if (rating_error) {
+                $('#review-rating--error').removeClass('d-none');
+            } else {
+                $('#review-rating--error').addClass('d-none');
+            }
+
+            if (rating_error || blurb_error) {
+                return;
+            }
+
+            console.log('Requesting POST');
+
+            // Post review to place id
+            $.post(
+                'api/places/' + window.place_id + '/reviews/',
+                {
+                    blurb: blurb,
+                    rating: rating
+                },
+                function(data) {
+                    console.log(data);
+                    $('#appModal').modal('hide');
+                    // Need to repopulate specific card '#' + window.place_id
+                    // $('#' + window.place_id + ' .icon-star').trigger('click');
+                },
+                'json'
+            ).fail(function(data) {
+                console.log('fail');
+                console.log(data);
+            }).always(function(data) {
+                console.log('always');
+                console.log(data);
+            });
+        });
+    });
 }
 
 function prepareModal(config) {
     $('.modal-title').html(config.title);
     $('.modal-body .container-fluid').html(config.body);
 
-    if (config.hideClose) {
-        $('.close').hide();
+    if (config.hide_close) {
+        $('#icon-close').hide();
     } else {
-        $('.close').show();
+        $('#icon-close').show();
     }
 
-    if (config.hideButtons) {
+    if (config.hide_buttons) {
         $('.modal-footer').hide();
     } else {
         $('.modal-footer').show();
@@ -239,8 +360,8 @@ function resetModal() {
     let config = {
         title: '',
         body: '',
-        hideClose: false,
-        hideButtons: false
+        hide_close: false,
+        hide_buttons: false
     }
 
     prepareModal(config);

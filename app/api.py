@@ -12,6 +12,52 @@ class Api:
     def __init__(self, db):
         self._db = db
 
+    def request_place(self, place_id):
+        """ Return place info from given place_id """
+        places = []
+        if not self._db.places.count():
+            return places
+
+        cursor = self._db.places.aggregate(
+            [{
+                '$match': {
+                    '_id': ObjectId(place_id)
+                }
+            },{
+                '$lookup': {
+                    'from': 'reviews',
+                    'localField': '_id',
+                    'foreignField': 'place_id',
+                    'as': 'place_ratings'
+                }
+            },{
+                '$project': {
+                    '_id': 1,
+                    'name': 1,
+                    'location': 1,
+                    'tags': 1,
+                    'distance': 1,
+                    'ratings_avg': {
+                        '$avg': '$place_ratings.rating'
+                    },
+                    'ratings_total': {
+                        '$size': '$place_ratings.rating'
+                    }
+                }
+            }],
+            cursor={}
+        )
+
+        for p in cursor:
+            p['_id'] = str(p['_id'])
+            location = p.pop('location', [0, 0])
+            p['lng'] = location[0]
+            p['lat'] = location[1]
+            logging.debug("%s", p)
+            places.append(p)
+
+        return places
+
     def save_place_review(self, place_id, blurb, rating):
         """ Save review associated with given place_id. """
         date = datetime.utcnow()
@@ -28,6 +74,26 @@ class Api:
         # Check ttl?
 
         return self._db.reviews.insert(review)
+
+    def request_review(self, review_id):
+        """ Return review by given review_id. """
+        reviews = []
+        if not self._db.reviews.count():
+            return reviews
+
+        cursor = self._db.reviews.find({
+            '_id': ObjectId(review_id)
+        },{
+            'created_at': 0
+        })
+
+        for r in cursor:
+            logging.debug("%s", r)
+            r['_id'] = str(r['_id'])
+            r['place_id'] = str(r['place_id'])
+            reviews.append(r)
+
+        return reviews
 
     def request_place_reviews(self, place_id):
         """ Return reviews associated with given place_id.

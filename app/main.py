@@ -81,18 +81,26 @@ def get_home(path=''):
     # form['tags'] = arr_tag
     # form['location'] = _dictLocations[name]
 
-    # @_app.route('/api/places/<place_id>/')
-    # @_app.route('/api/reviews/<review_id>/')
+@_app.route('/api/places/<place_id>')
+@_app.route('/api/places/<place_id>/')
+def get_place(place_id):
+    """ Return place data by given place_id. """
+    place = _api.request_place(place_id)
+    return jsonify(data = {'place': place})
+
+@_app.route('/api/reviews/<review_id>')
+@_app.route('/api/reviews/<review_id>/')
+def get_review(review_id):
+    """ Return review data by given review_id. """
+    review = _api.request_review(review_id)
+    return jsonify(data = {'review': review})
 
 @_app.route('/api/places/<place_id>/reviews', methods=["POST"])
 @_app.route('/api/places/<place_id>/reviews/', methods=["POST"])
 def post_place_review(place_id):
     """ Post a review about given place id.
-    Unpack request form and pass to api.
+    Unpack, validate, and pass to api.
     """
-    logging.debug('post_review')
-    logging.debug(request.form)
-
     blurb = request.form['blurb']
     rating = int(request.form['rating'])
 
@@ -107,23 +115,17 @@ def post_place_review(place_id):
         return jsonify(error=errors)
 
     review_id = _api.save_place_review(place_id, blurb, rating)
-    logging.debug('save_review returned')
-    logging.debug(review_id)
     if not review_id:
         errors['review'] = 'Review not saved.'
         return jsonify(error=errors)
 
-    return jsonify(data={'review_id':str(review_id)}), 201
+    return jsonify(data = {'review_id': str(review_id)}), 201
 
 @_app.route('/api/places/<place_id>/reviews/')
 def get_place_reviews(place_id):
     """ Return json representation of reviews for given place id. """
     reviews = _api.request_place_reviews(place_id)
     return jsonify(reviews=reviews)
-
-# search by tags
-# search by rating
-# search by location
 
 @_app.route('/api/search/<float:lng>/<float:lat>/')
 @_app.route('/api/search/<float:lng>/<float:lat>/<int:meters>/')
@@ -137,13 +139,8 @@ def get_search_json(lng, lat, meters=100):
 
     return jsonify(places=places)
 
-
-@_app.route('/search/<float:lng>/<float:lat>/')
-@_app.route('/search/<float:lng>/<float:lat>/<int:meters>/')
-def get_search(lat, lng, meters=100):
-    """ With given lng, lat search in meters business near by. """
-    places = _api.search(lng, lat, meters)
-    return render_template(TPL_SEARCH, total=len(places), places=places)
+# search by tags
+# search by rating
 
 # APPLICATION ENTRY
 if __name__ == '__main__':

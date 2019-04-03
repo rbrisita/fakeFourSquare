@@ -67,6 +67,7 @@ const FORM_REVIEW = '\
     </div>\
 </div>'
 
+var user_location = {};
 var markers = [];
 var map = L.map('map');
 
@@ -135,17 +136,32 @@ function restrictMapMovement(center) {
 function requestPlaces(center) {
     $.get(
         'api/search/' + center.lng + '/' + center.lat + '/' + Math.floor(MAP_MAX_AREA / 3) + '/',
-        function(data) {
-            let places = data.places;
+        function(response) {
+            if (!response || !response.places) {
+                showMessage('Error', 'No places found.');
+                return;
+            }
+
+            let places = response.places;
             setMarkers(places);
             createCards(places);
             cardEventHandler();
             modalEventHandler();
             reviewFormEventHandler();
+    }).fail(function() {
+        showMessage('Error', 'No places found.');
     });
+}
 
-    // TODO: Test fail condition; no places
-    // Modal pop up
+function showMessage(title, body) {
+    let config = {
+        title: title,
+        body: body,
+        hide_close: false,
+        hide_buttons: true
+    };
+    prepareModal(config);
+    $('#appModal').modal('show');
 }
 
 function setMarkers(places) {
@@ -206,6 +222,11 @@ function cardEventHandler() {
     });
 }
 
+/**
+ * Modal is shown through Bootstrap data attributes.
+ *
+ * The related target that issued the modal's show command is used to request further action.
+ */
 function modalEventHandler() {
     $('#appModal').on('show.bs.modal', (ev) => {
         let icon = $(ev.relatedTarget);
@@ -217,20 +238,26 @@ function modalEventHandler() {
         window.place_name = name;
         window.place_id = place_id;
 
-        // TODO test icon type for specfic config
-        // Type 1 show reviews
-        // Type 2 show review form
-        // Type 3 directions
-        let config = {
-            title: name + ' Reviews',
-            body: 'Requesting reviews...',
-            hide_close: true,
-            hide_buttons: true
-        };
-        prepareModal(config);
-
-        requestReviews(place_id, name);
+        if (type === 1) {
+            showReviews(place_id, name);
+        } else if (type === 2) {
+            $('#request-review-form').trigger('click');
+        } else if (type === 3) {
+            showDirections(place_id, name);
+        }
     });
+}
+
+function showReviews(place_id, name) {
+    let config = {
+        title: name + ' Reviews',
+        body: 'Requesting reviews...',
+        hide_close: true,
+        hide_buttons: true
+    };
+    prepareModal(config);
+
+    requestReviews(place_id, name);
 }
 
 function requestReviews(place_id, name) {
@@ -252,6 +279,48 @@ function requestReviews(place_id, name) {
         $('.modal-body .container-fluid').html(html);
         feather.replace();
     });
+}
+
+function showDirections(place_id, name) {
+    let config = {
+        title: name + ' Directions',
+        body: 'Directions opended in new view.',
+        hide_close: false,
+        hide_buttons: true
+    };
+    prepareModal(config);
+
+    let marker = markers[place_id];
+    let latLng = marker.getLatLng();
+
+    // Apple
+    // comgooglemapsurl://
+    // comgooglemaps://?
+
+    // For a point on map
+    // https://maps.google.com/?q=@37.3161,-122.1836
+
+    // /dir/ - directions
+    // let url = '//maps.google.com/maps?saddr={SLAT},{SLNG}&daddr={DLAT},{DLNG}&directionsmode=walking&ll=';
+    // let url = '//maps.google.com/maps?saddr={SLAT},{SLNG}&daddr={DLAT},{DLNG}&travelmode=walking&ll=';
+    let url = '//www.google.com/maps/dir/?api=1&origin={SLAT},{SLNG}&destination={DLAT},{DLNG}&travelmode=walking';
+    let protocol = '';
+
+    url = url.replace('{SLAT}', user_location.lat);
+    url = url.replace('{SLNG}', user_location.lng);
+    url = url.replace('{DLAT}', latLng.lat);
+    url = url.replace('{DLNG}', latLng.lng);
+
+    // Open in Apple Maps
+    if ((navigator.platform.indexOf("iPhone") != -1) ||
+       (navigator.platform.indexOf("iPad") != -1) ||
+       (navigator.platform.indexOf("iPod") != -1)) {
+           protocol = 'maps:';
+    } else { // else use Google
+        protocol = 'https:';
+    }
+
+    window.open(protocol + url);
 }
 
 function generateReviewHTML(item) {
@@ -379,7 +448,6 @@ function prepareModal(config) {
     } else {
         $('.modal-footer').show();
     }
-
 }
 
 function resetModal() {
@@ -408,14 +476,16 @@ $(function() {
         map.off('locationfound', locationFoundHandler);
         map.off('locationerror', locationErrorHandler);
 
-        showLocation(ev.latlng);
+        user_location = latLng;
+        showLocation(user_location);
     };
 
     let locationErrorHandler = function(ev) {
         map.off('locationfound', locationFoundHandler);
         map.off('locationerror', locationErrorHandler);
 
-        showLocation(getNYCLatLng());
+        user_location = getNYCLatLng();
+        showLocation(user_location);
     };
 
     map.on('locationfound', locationFoundHandler);

@@ -128,7 +128,7 @@ def post_place_review(place_id):
 def get_place_reviews(place_id):
     """ Return json representation of reviews for given place id. """
     reviews = _api.request_place_reviews(place_id)
-    return jsonify(reviews=reviews)
+    return jsonify(data = {'reviews': reviews})
 
 @_app.route('/api/search/<float:lng>/<float:lat>/')
 @_app.route('/api/search/<float:lng>/<float:lat>/<int:meters>/')

@@ -143,7 +143,7 @@ function requestPlaces(center) {
             modalEventHandler();
     });
 
-    // Test fail condition
+    // TODO: Test fail condition; no places
     // Modal pop up
 }
 
@@ -217,6 +217,9 @@ function modalEventHandler() {
         window.place_id = place_id;
 
         // TODO test icon type for specfic config
+        // Type 1 show reviews
+        // Type 2 show review form
+        // Type 3 directions
         let config = {
             title: name + ' Reviews',
             body: 'Requesting reviews...',
@@ -225,28 +228,7 @@ function modalEventHandler() {
         };
         prepareModal(config);
 
-        // Request reviews for place_id
-        let html = '';
-        $.get('api/places/' + place_id + '/reviews/', (data) => {
-            reviews = data.reviews;
-            reviews.forEach(function(item) {
-                html += TPL_REVIEW.replace('{BLURB}', item.blurb);
-                html = html.replace('{RATING}', item.rating);
-                html = html.replace('{DATE}', item.date);
-            });
-
-            if (!reviews.length) {
-                html = '<h5>No reviews found.</h5>';
-            }
-        }).fail(function() {
-            html = '<h5>No reviews found.</h5>';
-        }).always(function() {
-            resetModal();
-            $('.modal-title').html(name + ' Reviews');
-            $('.modal-body .container-fluid').html(html);
-            feather.replace();
-        });
-
+        requestReviews(place_id, name);
     });
 
     $('#request-review-form').on('click', function(ev) {
@@ -336,6 +318,34 @@ function modalEventHandler() {
             );
         });
     });
+}
+
+function requestReviews(place_id, name) {
+    let html = '';
+    $.get('api/places/' + place_id + '/reviews/', (response) => {
+        reviews = response.data.reviews;
+        if (!reviews.length) {
+            html = '<h5>No reviews found.</h5>';
+        } else {
+            reviews.forEach(function(item) {
+                html += generateReviewHTML(item);
+            });
+        }
+    }).fail(function() {
+        html = '<h5>No reviews found.</h5>';
+    }).always(function() {
+        resetModal();
+        $('.modal-title').html(name + ' Reviews');
+        $('.modal-body .container-fluid').html(html);
+        feather.replace();
+    });
+}
+
+function generateReviewHTML(item) {
+    let html = TPL_REVIEW.replace('{BLURB}', item.blurb);
+    html = html.replace('{RATING}', item.rating);
+    html = html.replace('{DATE}', item.date);
+    return html;
 }
 
 function prepareModal(config) {

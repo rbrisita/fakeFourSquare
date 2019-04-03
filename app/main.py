@@ -81,21 +81,24 @@ def get_home(path=''):
     # form['tags'] = arr_tag
     # form['location'] = _dictLocations[name]
 
-@_app.route('/api/places/<place_id>')
 @_app.route('/api/places/<place_id>/')
 def get_place(place_id):
     """ Return place data by given place_id. """
     place = _api.request_place(place_id)
-    return jsonify(data = {'place': place})
+    if place:
+        return jsonify(data = {'place': place})
+    else:
+        return jsonify(error = {'message': 'Place not found.'}), 404
 
-@_app.route('/api/reviews/<review_id>')
 @_app.route('/api/reviews/<review_id>/')
 def get_review(review_id):
     """ Return review data by given review_id. """
     review = _api.request_review(review_id)
-    return jsonify(data = {'review': review})
+    if review:
+        return jsonify(data = {'review': review})
+    else:
+        return jsonify(error = {'message': 'Review not found.'}), 404
 
-@_app.route('/api/places/<place_id>/reviews', methods=["POST"])
 @_app.route('/api/places/<place_id>/reviews/', methods=["POST"])
 def post_place_review(place_id):
     """ Post a review about given place id.

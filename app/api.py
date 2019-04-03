@@ -14,9 +14,9 @@ class Api:
 
     def request_place(self, place_id):
         """ Return place info from given place_id """
-        places = []
+        place = None
         if not self._db.places.count():
-            return places
+            return place
 
         cursor = self._db.places.aggregate(
             [{
@@ -53,10 +53,9 @@ class Api:
             location = p.pop('location', [0, 0])
             p['lng'] = location[0]
             p['lat'] = location[1]
-            logging.debug("%s", p)
-            places.append(p)
+            place = p
 
-        return places
+        return place
 
     def save_place_review(self, place_id, blurb, rating):
         """ Save review associated with given place_id. """
@@ -77,9 +76,9 @@ class Api:
 
     def request_review(self, review_id):
         """ Return review by given review_id. """
-        reviews = []
+        review = None
         if not self._db.reviews.count():
-            return reviews
+            return review
 
         cursor = self._db.reviews.find({
             '_id': ObjectId(review_id)
@@ -88,12 +87,11 @@ class Api:
         })
 
         for r in cursor:
-            logging.debug("%s", r)
             r['_id'] = str(r['_id'])
             r['place_id'] = str(r['place_id'])
-            reviews.append(r)
+            review = r
 
-        return reviews
+        return review
 
     def request_place_reviews(self, place_id):
         """ Return reviews associated with given place_id.
@@ -138,7 +136,6 @@ class Api:
         # )
 
         for r in cursor:
-            logging.debug("%s", r)
             reviews.append(r)
 
         return reviews
@@ -205,7 +202,6 @@ class Api:
             location = p.pop('location', [0, 0])
             p['lng'] = location[0]
             p['lat'] = location[1]
-            logging.debug("%s", p)
             places.append(p)
 
         return places

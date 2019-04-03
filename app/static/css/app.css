@@ -23,6 +23,11 @@
     fill: yellow;
 }
 
+.modal-body{
+    overflow-y: scroll;
+    max-height: 500px;
+}
+
 @media (min-width: 768px) {
     .scrollable {
         height: 480px;

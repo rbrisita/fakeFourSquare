@@ -166,15 +166,20 @@ function createCards(places) {
     let html = '';
 
     places.forEach(function(item) {
-        html += TPL_CARD.replace(/{TITLE}/g, item.name);
-        html = html.replace('{TAGS}', item.tags.join(', '));
-        html = html.replace('{ID}', item._id);
-        html = html.replace('{RATING}', parseFloat(item.ratings_avg.toFixed(2)));
+        html += generateCardHTML(item);
     });
 
     $('div.row.scrollable').html(html);
 
     feather.replace();
+}
+
+function generateCardHTML(item) {
+    let html = TPL_CARD.replace(/{TITLE}/g, item.name);
+    html = html.replace('{TAGS}', item.tags.join(', '));
+    html = html.replace('{ID}', item._id);
+    html = html.replace('{RATING}', parseFloat(item.ratings_avg.toFixed(2)));
+    return html;
 }
 
 function cardEventHandler() {
@@ -205,11 +210,11 @@ function modalEventHandler() {
         let icon = $(ev.relatedTarget);
         let type = icon.data('icon-type');
         let card = icon.closest('[data-card]');
-        let id = card.attr('id');
+        let place_id = card.attr('id');
         let name = card.find('.card-header').first().text();
 
         window.place_name = name;
-        window.place_id = id;
+        window.place_id = place_id;
 
         // TODO test icon type for specfic config
         let config = {
@@ -220,36 +225,31 @@ function modalEventHandler() {
         };
         prepareModal(config);
 
-        // Request reviews for id
-        $.get('api/places/' + id + '/reviews/', (data) => {
-            resetModal();
-
+        // Request reviews for place_id
+        let html = '';
+        $.get('api/places/' + place_id + '/reviews/', (data) => {
             reviews = data.reviews;
-
-            let html = '';
             reviews.forEach(function(item) {
                 html += TPL_REVIEW.replace('{BLURB}', item.blurb);
                 html = html.replace('{RATING}', item.rating);
                 html = html.replace('{DATE}', item.date);
             });
 
+            if (!reviews.length) {
+                html = '<h5>No reviews found.</h5>';
+            }
+        }).fail(function() {
+            html = '<h5>No reviews found.</h5>';
+        }).always(function() {
+            resetModal();
             $('.modal-title').html(name + ' Reviews');
             $('.modal-body .container-fluid').html(html);
-
             feather.replace();
         });
 
-        // TODO Test failure case
-
     });
 
-    $('#appModal').on('hidden.bs.modal', (ev) => {
-        console.log(this);
-        console.log(ev);
-    });
-
-    $('#request-review').on('click', function(ev) {
-        console.log('#request-review');
+    $('#request-review-form').on('click', function(ev) {
         let config = {
             title: 'Add ' + window.place_name + ' Review',
             body: FORM_REVIEW.replace('{ID}', window.place_id),
@@ -258,6 +258,7 @@ function modalEventHandler() {
         };
         prepareModal(config);
         feather.replace();
+        $('#review-blurb').trigger('focus');
 
         let reviewRatingHandler = function(ev) {
             let selected = (ev.target.nodeName != 'svg') ? ev.target.parentNode : ev.target;
@@ -282,15 +283,11 @@ function modalEventHandler() {
         });
 
         $('#review-form').on('submit', function(ev) {
-            console.log(ev);
-
             ev.preventDefault();
             ev.stopPropagation();
 
             let blurb = $('#review-blurb').val().trim().replace(/\s+/,' ');
             let rating = $('#review-rating svg.selected').length;
-            console.log(blurb);
-            console.log(rating);
 
             let blurb_error = (blurb.length < 3);
             let rating_error = (!rating);
@@ -311,8 +308,6 @@ function modalEventHandler() {
                 return;
             }
 
-            console.log('Requesting POST');
-
             // Post review to place id
             $.post(
                 'api/places/' + window.place_id + '/reviews/',
@@ -320,20 +315,25 @@ function modalEventHandler() {
                     blurb: blurb,
                     rating: rating
                 },
-                function(data) {
-                    console.log(data);
+                function(response) {
+                    let link = $('#' + window.place_id + ' .icon-star .card-link');
+                    let modalHiddenHandler = (ev) => {
+                        $('#appModal').off('hidden.bs.modal', modalHiddenHandler);
+                        link.trigger('click');
+                    };
+                    $('#appModal').on('hidden.bs.modal', modalHiddenHandler);
                     $('#appModal').modal('hide');
-                    // Need to repopulate specific card '#' + window.place_id
-                    // $('#' + window.place_id + ' .icon-star').trigger('click');
+
+                    $.get(
+                        'api/places/' + window.place_id + '/',
+                        function(response) {
+                            data = response.data;
+                            link.find('span').text(data.place.ratings_avg);
+                        }
+                    );
                 },
                 'json'
-            ).fail(function(data) {
-                console.log('fail');
-                console.log(data);
-            }).always(function(data) {
-                console.log('always');
-                console.log(data);
-            });
+            );
         });
     });
 }

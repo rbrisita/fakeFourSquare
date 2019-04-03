@@ -137,12 +137,12 @@ function requestPlaces(center) {
     $.get(
         'api/search/' + center.lng + '/' + center.lat + '/' + Math.floor(MAP_MAX_AREA / 3) + '/',
         function(response) {
-            if (!response || !response.places) {
+            if (!response || !response.data) {
                 showMessage('Error', 'No places found.');
                 return;
             }
 
-            let places = response.places;
+            let places = response.data.places;
             setMarkers(places);
             createCards(places);
             cardEventHandler();

@@ -15,14 +15,9 @@ from tools.database_seeder import DatabaseSeeder
 
 # CONSTANTS
 TPL_INDEX = 'index.html'
-TPL_REVIEW_FORM = 'review.html'
-TPL_BUSINESS = 'business.html'
-TPL_SEARCH = 'search.html'
 
 class NegativeFloatConverter(NumberConverter):
-    '''
-    Override NumberConverter to fix the issue with negative floats
-    '''
+    """ Override NumberConverter to fix the issue with negative floats. """
     regex = r'\-?\d+\.\d+'
     num_convert = float
 
@@ -30,28 +25,12 @@ class NegativeFloatConverter(NumberConverter):
         NumberConverter.__init__(self, map, 0, min, max)
 
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     filename='../app.log',
     format='%(asctime)s - %(process)d - %(name)s - %(levelname)s - %(funcName)s#%(lineno)d - %(message)s')
-logging.debug('App Start')
-
-# def main():
-#     _app = Flask(__name__)
-#     _app.url_map.converters['float'] = NegativeFloatConverter
-#     _app.config['MONGO_URI'] = config.DATABASE['uri']
-#     _mongo = PyMongo(_app)
-#     _dictLocations = {}  # Hold already entered business names and their generated locations
-#     _api = None
-#     with _app.app_context():
-#         _api = api.Api(_mongo.db)
-#     _app.run(debug=DEBUG)
+logging.info('App Start')
 
 _app = Flask(__name__)
-# _app.url_map.converters['float'] = NegativeFloatConverter
-# _app.config['MONGO_URI'] = config.DATABASE['uri']
-
-# _mongo = PyMongo(_app)
-# _db = DatabaseSeeder(_mongo.db)
 
 with _app.app_context():
     _app.url_map.converters['float'] = NegativeFloatConverter
@@ -132,7 +111,7 @@ def get_place_reviews(place_id):
 
 @_app.route('/api/search/<float:lng>/<float:lat>/')
 @_app.route('/api/search/<float:lng>/<float:lat>/<int:meters>/')
-def get_search_json(lng, lat, meters=100):
+def get_search(lng, lat, meters=100):
     """ Return json representation of search request """
     places = _api.search(lng, lat, meters)
     if not places:
@@ -140,12 +119,11 @@ def get_search_json(lng, lat, meters=100):
         _db.create_indexes()
         places = _api.search(lng, lat, meters)
 
-    return jsonify(places=places)
+    return jsonify(data = {'places': places})
 
 # search by tags
 # search by rating
 
 # APPLICATION ENTRY
 if __name__ == '__main__':
-    # main()
     _app.run(debug=config.DEBUG)

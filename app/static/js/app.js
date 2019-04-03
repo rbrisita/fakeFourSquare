@@ -1,6 +1,5 @@
 
 const MAP_ZOOM = 16;
-const MAP_ACCESS_TOKEN = 'pk.eyJ1IjoicmJyaXNpdGEiLCJhIjoiY2p0amIyYjUyMGpvZzN5bDloejgwY3NtMSJ9.8z-tpve4BVbiTXZ2nBWSxw'
 const MAP_PROVIDER_URI = 'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}'
 const MAP_ATTRIBUTION = 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>'
 const MAP_MAX_AREA = 4000;
@@ -476,7 +475,7 @@ $(function() {
         map.off('locationfound', locationFoundHandler);
         map.off('locationerror', locationErrorHandler);
 
-        user_location = latLng;
+        user_location = ev.latlng;
         showLocation(user_location);
     };
 

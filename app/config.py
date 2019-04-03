@@ -19,3 +19,7 @@ LOCATION = {
 }
 
 DEBUG = os.getenv('DEBUG', False)
+
+MAP = {
+    'access_token': os.getenv('MAP_ACCESS_TOKEN', '')
+}

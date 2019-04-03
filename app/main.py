@@ -45,7 +45,7 @@ with _app.app_context():
 @_app.route('/')
 def get_home(path=''):
     """ Get landing page of application """
-    return render_template(TPL_INDEX)
+    return render_template(TPL_INDEX, map_access_token=config.MAP['access_token'])
 
 # get places
 # post place

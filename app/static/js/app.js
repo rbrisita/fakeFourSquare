@@ -141,6 +141,7 @@ function requestPlaces(center) {
             createCards(places);
             cardEventHandler();
             modalEventHandler();
+            reviewFormEventHandler();
     });
 
     // TODO: Test fail condition; no places
@@ -230,94 +231,6 @@ function modalEventHandler() {
 
         requestReviews(place_id, name);
     });
-
-    $('#request-review-form').on('click', function(ev) {
-        let config = {
-            title: 'Add ' + window.place_name + ' Review',
-            body: FORM_REVIEW.replace('{ID}', window.place_id),
-            hide_close: false,
-            hide_buttons: true
-        };
-        prepareModal(config);
-        feather.replace();
-        $('#review-blurb').trigger('focus');
-
-        let reviewRatingHandler = function(ev) {
-            let selected = (ev.target.nodeName != 'svg') ? ev.target.parentNode : ev.target;
-            if (selected.nodeName != 'svg') {
-                return;
-            }
-
-            $('#review-rating--error').addClass('d-none');
-
-            let svgs = $('#review-rating svg');
-            svgs.removeClass('selected');
-            svgs.each(function() {
-                $(this).addClass('selected');
-                if (this === selected) {
-                    return false;
-                }
-            });
-        };
-        $('#review-rating').on('click', reviewRatingHandler);
-        $('#review-blurb').on('focus', function(ev) {
-            $('#review-blurb--error').addClass('d-none');
-        });
-
-        $('#review-form').on('submit', function(ev) {
-            ev.preventDefault();
-            ev.stopPropagation();
-
-            let blurb = $('#review-blurb').val().trim().replace(/\s+/,' ');
-            let rating = $('#review-rating svg.selected').length;
-
-            let blurb_error = (blurb.length < 3);
-            let rating_error = (!rating);
-
-            if (blurb_error) {
-                $('#review-blurb--error').removeClass('d-none');
-            } else {
-                $('#review-blurb--error').addClass('d-none');
-            }
-
-            if (rating_error) {
-                $('#review-rating--error').removeClass('d-none');
-            } else {
-                $('#review-rating--error').addClass('d-none');
-            }
-
-            if (rating_error || blurb_error) {
-                return;
-            }
-
-            // Post review to place id
-            $.post(
-                'api/places/' + window.place_id + '/reviews/',
-                {
-                    blurb: blurb,
-                    rating: rating
-                },
-                function(response) {
-                    let link = $('#' + window.place_id + ' .icon-star .card-link');
-                    let modalHiddenHandler = (ev) => {
-                        $('#appModal').off('hidden.bs.modal', modalHiddenHandler);
-                        link.trigger('click');
-                    };
-                    $('#appModal').on('hidden.bs.modal', modalHiddenHandler);
-                    $('#appModal').modal('hide');
-
-                    $.get(
-                        'api/places/' + window.place_id + '/',
-                        function(response) {
-                            data = response.data;
-                            link.find('span').text(data.place.ratings_avg);
-                        }
-                    );
-                },
-                'json'
-            );
-        });
-    });
 }
 
 function requestReviews(place_id, name) {
@@ -346,6 +259,109 @@ function generateReviewHTML(item) {
     html = html.replace('{RATING}', item.rating);
     html = html.replace('{DATE}', item.date);
     return html;
+}
+
+function reviewFormEventHandler() {
+    $('#request-review-form').on('click', function(ev) {
+        let config = {
+            title: 'Add ' + window.place_name + ' Review',
+            body: FORM_REVIEW.replace('{ID}', window.place_id),
+            hide_close: false,
+            hide_buttons: true
+        };
+        prepareModal(config);
+        feather.replace();
+
+        reviewFormRatingHandler();
+        reviewFormBlurbHandler();
+        reviewFormSubmitHandler();
+    });
+}
+
+function reviewFormRatingHandler() {
+    $('#review-rating').on('click', function(ev) {
+        let selected = (ev.target.nodeName.toUpperCase() == 'SVG') ? ev.target : ev.target.parentNode;
+        if (selected.nodeName.toUpperCase() != 'SVG') {
+            return;
+        }
+
+        $('#review-rating--error').addClass('d-none');
+
+        let svgs = $('#review-rating svg');
+        svgs.removeClass('selected');
+        svgs.each(function() {
+            $(this).addClass('selected');
+            if (this === selected) {
+                return false;
+            }
+        });
+    });
+}
+
+function reviewFormBlurbHandler() {
+    $('#review-blurb').trigger('focus');
+    $('#review-blurb').on('focus', function(ev) {
+        $('#review-blurb--error').addClass('d-none');
+    });
+}
+
+function reviewFormSubmitHandler() {
+    $('#review-form').on('submit', function(ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+
+        let blurb = $('#review-blurb').val().trim().replace(/\s+/,' ');
+        let rating = $('#review-rating svg.selected').length;
+
+        if (!reviewFormValid(blurb, rating)) {
+            return;
+        }
+
+        // Post review to place id
+        $.post(
+            'api/places/' + window.place_id + '/reviews/',
+            {
+                blurb: blurb,
+                rating: rating
+            },
+            function(response) {
+                let link = $('#' + window.place_id + ' .icon-star .card-link');
+                let modalHiddenHandler = (ev) => {
+                    $('#appModal').off('hidden.bs.modal', modalHiddenHandler);
+                    link.trigger('click');
+                };
+                $('#appModal').on('hidden.bs.modal', modalHiddenHandler);
+                $('#appModal').modal('hide');
+
+                $.get(
+                    'api/places/' + window.place_id + '/',
+                    function(response) {
+                        link.find('span').text(response.data.place.ratings_avg);
+                    }
+                );
+            },
+            'json'
+        );
+    });
+}
+
+function reviewFormValid(blurb, rating) {
+    let blurb_error = (blurb.length < 3);
+    let rating_error = (!rating);
+
+    if (blurb_error) {
+        $('#review-blurb--error').removeClass('d-none');
+    } else {
+        $('#review-blurb--error').addClass('d-none');
+    }
+
+    if (rating_error) {
+        $('#review-rating--error').removeClass('d-none');
+    } else {
+        $('#review-rating--error').addClass('d-none');
+    }
+
+    return !(rating_error || blurb_error)
 }
 
 function prepareModal(config) {

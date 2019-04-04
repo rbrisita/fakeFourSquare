@@ -44,6 +44,14 @@
     }
 }
 
+@media (max-width: 320px) {
+    #map {
+        height: 350px;
+        min-height: unset;
+        white-space: unset;
+    }
+}
+
 .spinner {
     margin: 200px auto;
     width: 100px;

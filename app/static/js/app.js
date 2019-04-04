@@ -15,7 +15,7 @@ const TPL_CARD = '\
                     <span class="font-weight-bold">{RATING}</span>&nbsp<i data-feather="star"></i>\
                 </a>\
             </div>\
-            <div class="col text-center">\
+            <div class="text-center">\
                 <a href="#appModal" class="card-link" data-icon-type=2 data-toggle="modal" data-target="#appModal">\
                     <i data-feather="message-square"></i>\
                 </a>\
@@ -133,34 +133,52 @@ function restrictMapMovement(center) {
 }
 
 function requestPlaces(center) {
-    $.get(
-        'api/search/' + center.lng + '/' + center.lat + '/' + Math.floor(MAP_MAX_AREA / 3) + '/',
-        function(response) {
-            if (!response || !response.data) {
-                showMessage('Error', 'No places found.');
-                return;
-            }
+    let transitionHandler = function() {
+        $('#appModal').off('shown.bs.modal', transitionHandler);
+        $.get(
+            'api/search/' + center.lng + '/' + center.lat + '/' + Math.floor(MAP_MAX_AREA / 3) + '/',
+            function(response) {
+                if (!response || !response.data) {
+                    showMessage('Error', 'No places found.');
+                    return;
+                } else  {
+                    hideMessage();
+                }
 
-            let places = response.data.places;
-            setMarkers(places);
-            createCards(places);
-            cardEventHandler();
-            modalEventHandler();
-            reviewFormEventHandler();
-    }).fail(function() {
-        showMessage('Error', 'No places found.');
-    });
+                let places = response.data.places;
+                setMarkers(places);
+                createCards(places);
+                cardEventHandler();
+                modalEventHandler();
+                reviewFormEventHandler();
+        }).fail(function(ev) {
+            showMessage('Error', 'No places found.');
+        });
+    };
+    $('#appModal').on('shown.bs.modal', transitionHandler);
+    showMessage('fake Four Square', 'Requesting or generating places...', true);
 }
 
-function showMessage(title, body) {
+function showMessage(title, body, hide_close = false) {
     let config = {
         title: title,
         body: body,
-        hide_close: false,
+        hide_close: hide_close,
         hide_buttons: true
     };
     prepareModal(config);
-    $('#appModal').modal('show');
+
+    let modal = $('#appModal');
+    if (modal.css('display') !== 'none') {
+        modal.trigger('shown.bs.modal');
+    } else {
+        modal.modal('show');
+    }
+
+}
+
+function hideMessage() {
+    $('#appModal').modal('hide');
 }
 
 function setMarkers(places) {
@@ -399,7 +417,7 @@ function reviewFormSubmitHandler() {
                     link.trigger('click');
                 };
                 $('#appModal').on('hidden.bs.modal', modalHiddenHandler);
-                $('#appModal').modal('hide');
+                hideMessage();
 
                 $.get(
                     'api/places/' + window.place_id + '/',
@@ -409,7 +427,9 @@ function reviewFormSubmitHandler() {
                 );
             },
             'json'
-        );
+        ).fail(function() {
+            showMessage('Review Submission Failed', 'Please try again later.');
+        });
     });
 }
 
@@ -471,6 +491,8 @@ function getNYCLatLng() {
  * Entry point to locate user.
  */
 $(function() {
+    showMessage('fake Four Square', 'Finding location...', true);
+
     let locationFoundHandler = function(ev) {
         map.off('locationfound', locationFoundHandler);
         map.off('locationerror', locationErrorHandler);

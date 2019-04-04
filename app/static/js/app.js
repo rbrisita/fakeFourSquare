@@ -31,8 +31,8 @@ const TPL_CARD = '\
 const TPL_REVIEW = '\
 <div class="row mb-3 border border-dark rounded">\
     <div class="col-12 lead">{BLURB}</div>\
-    <div class="col-6 text-left">{RATING}&nbsp<i data-feather="star"></i></div>\
-    <div class="col-6 small text-right text-muted">{DATE}</div>\
+    <div class="col-4 text-left">{RATING}&nbsp<i data-feather="star"></i></div>\
+    <div class="col-8 small text-right text-muted">{DATE}</div>\
 </div>';
 const FORM_REVIEW = '\
 <div class="row">\
@@ -310,34 +310,14 @@ function showDirections(place_id, name) {
     let marker = markers[place_id];
     let latLng = marker.getLatLng();
 
-    // Apple
-    // comgooglemapsurl://
-    // comgooglemaps://?
-
-    // For a point on map
-    // https://maps.google.com/?q=@37.3161,-122.1836
-
-    // /dir/ - directions
-    // let url = '//maps.google.com/maps?saddr={SLAT},{SLNG}&daddr={DLAT},{DLNG}&directionsmode=walking&ll=';
-    // let url = '//maps.google.com/maps?saddr={SLAT},{SLNG}&daddr={DLAT},{DLNG}&travelmode=walking&ll=';
-    let url = '//www.google.com/maps/dir/?api=1&origin={SLAT},{SLNG}&destination={DLAT},{DLNG}&travelmode=walking';
-    let protocol = '';
+    let url = 'https://www.google.com/maps/dir/?api=1&origin={SLAT},{SLNG}&destination={DLAT},{DLNG}&travelmode=walking';
 
     url = url.replace('{SLAT}', user_location.lat);
     url = url.replace('{SLNG}', user_location.lng);
     url = url.replace('{DLAT}', latLng.lat);
     url = url.replace('{DLNG}', latLng.lng);
 
-    // Open in Apple Maps
-    if ((navigator.platform.indexOf("iPhone") != -1) ||
-       (navigator.platform.indexOf("iPad") != -1) ||
-       (navigator.platform.indexOf("iPod") != -1)) {
-           protocol = 'maps:';
-    } else { // else use Google
-        protocol = 'https:';
-    }
-
-    window.open(protocol + url);
+    window.open(url);
 }
 
 function generateReviewHTML(item) {
@@ -422,7 +402,8 @@ function reviewFormSubmitHandler() {
                 $.get(
                     'api/places/' + window.place_id + '/',
                     function(response) {
-                        link.find('span').text(response.data.place.ratings_avg);
+                        let ratings_avg = response.data.place.ratings_avg;
+                        link.find('span').text(parseFloat(ratings_avg.toFixed(2)));
                     }
                 );
             },

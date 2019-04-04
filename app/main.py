@@ -2,11 +2,11 @@
 Application responsible for packing and unpacking routes and views.
 """
 
-import random
 import logging
+import random
 
 from flask import Flask, jsonify, render_template, redirect, url_for, request
-from flask.ext.pymongo import PyMongo
+from flask_pymongo import PyMongo
 from werkzeug.routing import NumberConverter
 
 import api
@@ -26,9 +26,9 @@ class NegativeFloatConverter(NumberConverter):
 
 logging.basicConfig(
     level=logging.INFO,
-    filename='../app.log',
-    format='%(asctime)s - %(process)d - %(name)s - %(levelname)s - %(funcName)s#%(lineno)d - %(message)s')
-logging.info('App Start')
+    filename='../logs/app.log',
+    format='%(asctime)s - %(process)d - %(name)s - %(levelname)s - %(funcName)s#%(lineno)d - %(message)s'
+)
 
 _app = Flask(__name__)
 
@@ -39,6 +39,8 @@ with _app.app_context():
     _mongo = PyMongo(_app)
     _db = DatabaseSeeder(_mongo.db)
     _api = api.Api(_mongo.db)
+
+    logging.info('App Start')
 
 # ROUTES AND CONTROLLERS
 @_app.route('/<path:path>/')  # Catch all

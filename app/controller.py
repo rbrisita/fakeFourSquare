@@ -1,10 +1,9 @@
 from datetime import datetime
-import logging
 
 from pymongo import DESCENDING
 from bson.objectid import ObjectId
 
-class Api:
+class Controller:
     """
     Responsible for CRUD operations on database.
     """

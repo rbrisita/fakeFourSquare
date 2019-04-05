@@ -6,8 +6,8 @@ import random
 
 from pymongo import GEOSPHERE, ASCENDING
 
-from tools.generator.place import Place
-from tools.generator.review import Review
+from tools.generator import Review
+from tools.generator import Place
 
 class DatabaseSeeder:
     def __init__(self, db):

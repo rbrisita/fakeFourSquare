@@ -106,7 +106,12 @@
     integrity="sha512-QVftwZFqvtRNi0ZyCtsznlKSWOStnDORoefr1enyq5mVL4tmKB3S/EnC3rRJcxCPavG10IcrVGSmPh6Qw5lwrg=="
     crossorigin=""></script>
 <script>
-    var MAP_ACCESS_TOKEN = "{{map_access_token}}";
+    var CONFIG = {
+        MAP_ACCESS_TOKEN: "{{map_access_token}}",
+        MAP_MAX_AREA: {{map_max_area}},
+        LOCATION_LAT: {{location_lat}},
+        LOCATION_LNG: {{location_lng}}
+    }
 </script>
 <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
 <script src="{{ url_for('static', filename='js/app.js') }}"></script>

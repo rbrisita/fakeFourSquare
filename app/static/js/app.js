@@ -2,7 +2,6 @@
 const MAP_ZOOM = 16;
 const MAP_PROVIDER_URI = 'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}'
 const MAP_ATTRIBUTION = 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>'
-const MAP_MAX_AREA = 4000;
 const TPL_CARD = '\
 <div data-card id="{ID}" class="card border-dark col" style="width: 18rem;">\
     <h5 class="card-header d-md-block d-none text-truncate">{TITLE}</h5>\
@@ -81,7 +80,7 @@ function showLocation(latLng) {
             maxZoom: 18,
             minZoom: 14,
             id: 'mapbox.streets',
-            accessToken: MAP_ACCESS_TOKEN
+            accessToken: CONFIG.MAP_ACCESS_TOKEN
     }).addTo(map);
 
     spinnerToggle(tileLayer);
@@ -128,7 +127,7 @@ function setLocationMarker(center) {
 }
 
 function restrictMapMovement(center) {
-    let newBounds = center.toBounds(MAP_MAX_AREA);
+    let newBounds = center.toBounds(CONFIG.MAP_MAX_AREA);
     map.setMaxBounds(newBounds);
 }
 
@@ -136,7 +135,7 @@ function requestPlaces(center) {
     let transitionHandler = function() {
         $('#appModal').off('shown.bs.modal', transitionHandler);
         $.get(
-            'api/search/' + center.lng + '/' + center.lat + '/' + Math.floor(MAP_MAX_AREA / 3) + '/',
+            'api/search/' + center.lng + '/' + center.lat + '/' + Math.floor(CONFIG.MAP_MAX_AREA / 3) + '/',
             function(response) {
                 if (!response || !response.data) {
                     showMessage('Error', 'No places found.');
@@ -463,8 +462,8 @@ function resetModal() {
 
 function getNYCLatLng() {
     return  L.latLng(
-        40.729243,
-        -73.984423
+        CONFIG.LOCATION_LAT,
+        CONFIG.LOCATION_LNG
     );
 }
 
